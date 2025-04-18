@@ -34,10 +34,21 @@ router.post('/categories/create', function (req, res) {
   data.id = key
   var postdata = JSON.parse(JSON.stringify(data))
   console.log('postdata', postdata)
-
-  categoryRef.set(postdata).then(function () {
-    res.redirect('/dashboard/categories')
-  })
+  categoriesRef
+    .orderByChild('path')
+    .equalTo(data.path)
+    .once('value')
+    .then(function (snapshot) {
+      console.log('snapshot', snapshot.val())
+      if (snapshot.val() !== null) {
+        req.flash('info', '已有相同路徑')
+        res.redirect('/dashboard/categories')
+      } else {
+        categoryRef.set(postdata).then(function () {
+          res.redirect('/dashboard/categories')
+        })
+      }
+    })
 })
 
 router.post('/categories/delete/:id', function (req, res) {
