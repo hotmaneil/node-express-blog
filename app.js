@@ -18,11 +18,24 @@ app.set('view engine', 'ejs')
 
 app.use(logger('dev'))
 app.use(bodyParser.json())
+var session = require('express-session')
+var flash = require('connect-flash')
+
 // app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
 app.use(cookieParser())
 app.use(express.static(path.join(__dirname, 'public')))
+
+app.use(
+  session({
+    secret: 'keyboard cat',
+    resave: true,
+    saveUninitialized: true,
+    cookie: { maxAge: 100 * 1000 }
+  })
+)
+app.use(flash());
 
 app.use('/', indexRouter)
 app.use('/dashboard', dashboardRouter)

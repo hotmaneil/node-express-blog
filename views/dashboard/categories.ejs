@@ -2,6 +2,12 @@
 
 <div class="row justify-content-center">
   <div class="col-md-6">
+    <% if(hasInfo){ %> 
+      <% for(var prop in messages){ %>
+        <div class="alert alert-warning"><%- messages[prop]%></div>
+      <% } %> 
+    <% } %>
+
     <table class="table">
       <thead>
         <tr>
@@ -11,23 +17,28 @@
         </tr>
       </thead>
       <tbody>
+        <% for(var prop in categories){ %>
         <tr>
-          <td class="align-middle">心得</td>
+          <td class="align-middle"><%- categories[prop].name %></td>
           <td>
             <input
               type="text"
               class="form-control form-control-sm"
-              value="mind"
+              value="<%- categories[prop].path %>"
             />
           </td>
           <td class="align-middle">
-            <form method="POST">
+            <form
+              action="/dashboard/categories/delete/<%- prop %>"
+              method="POST"
+            >
               <button type="submit" class="btn btn-outline-danger btn-sm">
                 刪除
               </button>
             </form>
           </td>
         </tr>
+        <% } %>
       </tbody>
     </table>
 

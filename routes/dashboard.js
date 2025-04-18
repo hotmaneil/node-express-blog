@@ -9,7 +9,17 @@ router.get('/article', function (req, res, next) {
 })
 
 router.get('/categories', function (req, res, next) {
-  res.render('dashboard/categories', { title: 'Express' })
+  const messages = req.flash('info')
+  categoriesRef.once('value').then(function (snapshot) {
+    const categories = snapshot.val()
+    console.log('categories', categories)
+    res.render('dashboard/categories', {
+      title: 'Express',
+      messages: messages,
+      hasInfo: messages.length > 0,
+      categories: categories
+    })
+  })
 })
 
 router.get('/archives', function (req, res, next) {
@@ -28,6 +38,14 @@ router.post('/categories/create', function (req, res) {
   categoryRef.set(postdata).then(function () {
     res.redirect('/dashboard/categories')
   })
+})
+
+router.post('/categories/delete/:id', function (req, res) {
+  const id = req.param('id')
+  console.log('id', id)
+  categoriesRef.child(id).remove()
+  req.flash('info', '資料已刪除')
+  res.redirect('/dashboard/categories')
 })
 
 module.exports = router
