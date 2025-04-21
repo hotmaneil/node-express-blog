@@ -1,12 +1,47 @@
 var express = require('express')
+const moment = require('moment')
+const striptags = require('striptags')
 const router = express.Router()
 const firebaseAdminDb = require('../connections/firebase_admin')
+
+const categoriesRef = firebaseAdminDb.ref('/categories/')
+const articlesRef = firebaseAdminDb.ref('/articles/')
+
+router.get('/archives', function (req, res, next) {
+  const status = req.query.status || 'public'
+  console.log('status', status)
+  let categories = {}
+  categoriesRef
+    .once('value')
+    .then(function (snapshot) {
+      categories = snapshot.val()
+      return articlesRef.orderByChild('update_time').once('value')
+    })
+    .then(function (snapshot) {
+      const articles = []
+      snapshot.forEach(function (snapshotChild) {
+        console.log('child', snapshotChild.val())
+
+        if (status === snapshotChild.val().status) {
+          articles.push(snapshotChild.val())
+        }
+      })
+      articles.reverse()
+      // console.log('articles', articles)
+      res.render('dashboard/archives', {
+        title: 'Express',
+        articles,
+        categories,
+        striptags,
+        moment,
+        status
+      })
+    })
+})
 
 /**
  * 種類
  */
-
-const categoriesRef = firebaseAdminDb.ref('/categories/')
 
 router.get('/categories', function (req, res, next) {
   const messages = req.flash('info')
@@ -20,10 +55,6 @@ router.get('/categories', function (req, res, next) {
       categories: categories
     })
   })
-})
-
-router.get('/archives', function (req, res, next) {
-  res.render('dashboard/archives', { title: 'Express' })
 })
 
 router.post('/categories/create', function (req, res) {
@@ -62,7 +93,6 @@ router.post('/categories/delete/:id', function (req, res) {
 /**
  * 文章
  */
-const articlesRef = firebaseAdminDb.ref('/articles/')
 
 router.get('/article', function (req, res, next) {
   categoriesRef.once('value').then(function (snapshot) {
@@ -97,12 +127,22 @@ router.post('/article/update/:id', function (req, res) {
   const id = req.param('id')
   console.log('update data', data)
 
-  // articlesRef.child(id).update(data).then(function () {
-  //   res.redirect(`/dashboard/article/${data.id}`)
-  // })
-  articlesRef.child(id).update(data).then(() => {
-    res.redirect(`/dashboard/article/${data.id}`);
-  });
+  articlesRef
+    .child(id)
+    .update(data)
+    .then(() => {
+      res.redirect(`/dashboard/article/${data.id}`)
+    })
+})
+
+router.post('/article/delete/:id', function (req, res) {
+  console.log(req.body)
+  const data = req.body
+  const id = req.param('id')
+  articlesRef.child(id).remove()
+  req.flash('info','文章已刪除')
+  res.send('文章已刪除')
+  res.end()
 })
 
 router.get('/article/:id', function (req, res, next) {
