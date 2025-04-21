@@ -2,11 +2,11 @@ var express = require('express')
 const router = express.Router()
 const firebaseAdminDb = require('../connections/firebase_admin')
 
-const categoriesRef = firebaseAdminDb.ref('/categories/')
+/**
+ * 種類
+ */
 
-router.get('/article', function (req, res, next) {
-  res.render('dashboard/article', { title: 'Express' })
-})
+const categoriesRef = firebaseAdminDb.ref('/categories/')
 
 router.get('/categories', function (req, res, next) {
   const messages = req.flash('info')
@@ -57,6 +57,74 @@ router.post('/categories/delete/:id', function (req, res) {
   categoriesRef.child(id).remove()
   req.flash('info', '資料已刪除')
   res.redirect('/dashboard/categories')
+})
+
+/**
+ * 文章
+ */
+const articlesRef = firebaseAdminDb.ref('/articles/')
+
+router.get('/article', function (req, res, next) {
+  categoriesRef.once('value').then(function (snapshot) {
+    const categories = snapshot.val()
+    console.log('categories', categories)
+    res.render('dashboard/article', {
+      title: 'Express',
+      categories
+    })
+  })
+})
+
+router.post('/article/create', function (req, res, next) {
+  console.log(req.body)
+  const data = req.body
+  const articleRef = articlesRef.push()
+  const key = articleRef.key
+  const updateTime = Math.floor(Date.now() / 1000)
+  data.id = key
+  data.update_time = updateTime
+  console.log('data', data)
+  var postdata = JSON.parse(JSON.stringify(data))
+  articleRef.set(postdata).then(function () {
+    // res.redirect('/dashboard/article')
+    res.redirect(`/dashboard/article/${key}`)
+  })
+})
+
+router.post('/article/update/:id', function (req, res) {
+  console.log(req.body)
+  const data = req.body
+  const id = req.param('id')
+  console.log('update data', data)
+
+  // articlesRef.child(id).update(data).then(function () {
+  //   res.redirect(`/dashboard/article/${data.id}`)
+  // })
+  articlesRef.child(id).update(data).then(() => {
+    res.redirect(`/dashboard/article/${data.id}`);
+  });
+})
+
+router.get('/article/:id', function (req, res, next) {
+  const id = req.param('id')
+  // console.log('id', id)
+  let categories = {}
+  categoriesRef
+    .once('value')
+    .then(function (snapshot) {
+      categories = snapshot.val()
+      // const categories = snapshot.val()
+      return articlesRef.child(id).once('value')
+    })
+    .then(function (snapshot) {
+      const article = snapshot.val()
+      console.log(article)
+      res.render('dashboard/article', {
+        title: 'Express',
+        categories,
+        article
+      })
+    })
 })
 
 module.exports = router
