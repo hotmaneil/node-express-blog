@@ -70,7 +70,10 @@ router.get('/post/:id', (req, res) => {
       console.log(snapshot.val())
       const article = snapshot.val()
       if (!article) {
-        return errorPage(res, '找不到該文章')
+        // return errorPage(res, '找不到該文章')
+        return res.render('error', {
+          title: '找不到該文章'
+        })
       }
       res.render('post', {
         title: 'Express',

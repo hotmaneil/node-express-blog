@@ -35,14 +35,29 @@ app.use(
     cookie: { maxAge: 100 * 1000 }
   })
 )
-app.use(flash());
+app.use(flash())
+
+//暫時不用
+const authChecker = function (req, res, next) {
+  console.log('middleware', req.session)
+  if (req.session.uid === process.env.ADMIN_UID) {
+    return next()
+  }
+  return res.redirect('/auth/signin')
+}
 
 app.use('/', indexRouter)
 app.use('/dashboard', dashboardRouter)
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
-  next(createError(404))
+  var err = new Error('Not Found')
+  err.status = 404
+  res.render('error',{
+    title:'您所查看的頁面不存在'
+  })
+  // next(err)
+  // next(createError(404))
 })
 
 // error handler
